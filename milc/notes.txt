@@ -1,0 +1,9 @@
+stack for temporary calculations
+ - Necessary for saving previous calculations before a function call
+ - Must be saved upon a function call
+   - What if a call a function before this function has completed
+     all of its work.
+
+environment
+ - Cannot put on stack because it needs to potentially survive
+   past the function that created it   
