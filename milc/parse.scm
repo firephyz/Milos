@@ -41,8 +41,8 @@
 
 ; Returns a list of tokens in the string
 (define (tokenize string)
-  (define symbol-terminals '(#\space #\tab #\( #\) #\.))
-  (define white-space '(#\space #\tab))
+  (define symbol-terminals '(#\space #\tab #\( #\) #\. #\newline))
+  (define white-space '(#\space #\tab #\newline))
   ; Returns if a character is white space
   (define (is-white-space char)
     (define (helper terminals)

@@ -3,13 +3,76 @@
 
 (define (eval-file name)
   (define initial-environment '())
-  ;; Opens the file, reads it in and parses
+;  ;; Opens the file, reads it in and parses
   ;; it into a list
   (let* ([input (open-input-file name)]
 	 [input-string (file->string input)]
 	 [input-list (parse input-string)])
-    (eval input-list
-	  initial-environment)))
+    (translate input-list)))
+
+;;;
+;;; Translator
+;;;
+(define (translate expr)
+  (if (atom? expr)
+      (if (number? expr)
+	  expr
+	  ;; Is a variable. Must lookup in environment
+	  (lambda (env)
+	    (lookup-var expr env)))
+      (let ([temp (car expr)])
+	(if (not (and (atom? temp)
+		      (eq? temp 'λ)))
+	    ;; Is an application. Apply the func to the argument
+	    (let ([func (translate temp)]
+		  [args (translate-args (cadr expr))])
+	      (lambda (env)
+		((lambda (func-result)
+		   (let ([func-body (car func-result)]
+			 [func-args (cdr func-result)])
+		     (func-body (build-env func-args
+					   args
+					   env))))
+		 (func env))))
+	      ;; Is a function. Create a function unit.	    
+	      (let ([body (translate (caddr expr))])
+		(lambda () (cons body
+				 (cadr expr)))))))))
+
+(define (translate-args args)
+  (if (null? args)
+      '()
+      (cons (translate (car args))
+	    (translate-args (cdr args)))))
+
+;;;
+;;; Translator Runtime
+;;;
+
+(define (build-env args values env)
+  (define (helper args values)
+    (if (null? args)
+	'()
+	(cons (cons (car args)
+		    (car values))
+	      (helper (cdr args)
+		      (cdr values)))))
+  (cons (helper args values) env))
+
+(define (lookup-var var env)
+  (define (lookup-in-frame var frame)
+    (if (null? frame)
+	'()
+	(if (eq? var (caar frame))
+	    (cdar frame)
+	    (lookup-in-frame var (cdr frame)))))
+  (if (null? env)
+      '()
+      (let ([result (lookup-in-frame var (car env))])
+	(if (null? result)
+	    (lookup-var var (cdr env))
+	    result))))
+
 ;;;
 ;;; Main evaluator
 ;;;
